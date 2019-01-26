@@ -5,7 +5,7 @@ override DATE:=$(shell date -u "+%Y%m%d-%H%M")
 
 
 .PHONY: clean
-clean: check
+clean:
 	rm -rf output
 	rm -rf mrbaviirc.egg-info
 	find -type f -name "*.py[co]" -delete
