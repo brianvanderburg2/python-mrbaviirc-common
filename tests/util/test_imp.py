@@ -1,4 +1,4 @@
-""" Tests for mrbaviirc.util.imp """
+""" Tests for mrbaviirc.common.util.imp """
 
 from __future__ import absolute_import
 
@@ -9,11 +9,11 @@ __license__     = "Apache License 2.0"
 
 import pytest
 
-from mrbaviirc.util import imp
+from mrbaviirc.common.util import imp
 
 # Exporter
 def test_exporter_symbol():
-    glbls = {"__package__": "mrbaviirc.util"}
+    glbls = {"__package__": "mrbaviirc.common.util"}
     export = imp.Exporter(glbls)
 
     @export
@@ -35,9 +35,9 @@ def test_exporter_symbol():
 
 def test_exporter_extend():
     import os
-    from mrbaviirc.util import functools
+    from mrbaviirc.common.util import functools
     
-    glbls = {"__package__": "mrbaviirc.util"}
+    glbls = {"__package__": "mrbaviirc.common.util"}
     export = imp.Exporter(glbls)
 
     export.extend(os)
@@ -45,14 +45,14 @@ def test_exporter_extend():
     assert(glbls["path"] == os.path)
 
 
-    glbls = {"__package__": "mrbaviirc.util"}
+    glbls = {"__package__": "mrbaviirc.common.util"}
     export = imp.Exporter(glbls)
 
     export.extend("os")
     assert(glbls["__all__"] == os.__all__)
     assert(glbls["path"] == os.path)
 
-    glbls = {"__package__": "mrbaviirc.util"}
+    glbls = {"__package__": "mrbaviirc.common.util"}
     export = imp.Exporter(glbls)
 
     export.extend(".functools")

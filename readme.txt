@@ -1,7 +1,7 @@
-mrbaviirc.util
-==============
+mrbaviirc.common
+================
 
-A collection of reusable utility classes and functions
+A collection of reusable classes and functions
 
 Copyright
 =========

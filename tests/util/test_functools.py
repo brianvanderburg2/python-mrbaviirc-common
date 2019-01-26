@@ -1,4 +1,4 @@
-""" Tests for mrbaviirc.util.functools """
+""" Tests for mrbaviirc.common.util.functools """
 
 from __future__ import absolute_import
 
@@ -7,7 +7,7 @@ __copyright__   = "Copyright 2018"
 __license__     = "Apache License 2.0"
 
 
-from mrbaviirc.util import functools
+from mrbaviirc.common.util import functools
 
 # lazyprop
 class LazyPropTester(object):

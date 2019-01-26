@@ -1,4 +1,4 @@
-""" Tests for mrbaviirc.util.thread """
+""" Tests for mrbaviirc.common.util.thread """
 
 from __future__ import absolute_import
 
@@ -9,7 +9,7 @@ __license__     = "Apache License 2.0"
 import threading
 import random
 
-from mrbaviirc.util import thread
+from mrbaviirc.common.util import thread
 
 
 # threadattr

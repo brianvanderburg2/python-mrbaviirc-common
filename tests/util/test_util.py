@@ -1,11 +1,11 @@
-""" Tests for mrbaviirc.util """
+""" Tests for mrbaviirc.common.util """
 
 __author__      = "Brian Allen Vanderburg II"
 __copyright__   = "Copyright 2018"
 __license__     = "Apache License 2.0"
 
 
-from mrbaviirc import util
+from mrbaviirc.common import util
 
 
 def test_updatedoc():
