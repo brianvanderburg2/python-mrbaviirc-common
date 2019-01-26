@@ -7,7 +7,7 @@ __copyright__   = "Copyright 2018"
 __license__     = "Apache License 2.0"
 
 
-from ...util import functools
+from mrbaviirc.util import functools
 
 # lazyprop
 class LazyPropTester(object):

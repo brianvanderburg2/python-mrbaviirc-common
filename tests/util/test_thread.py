@@ -9,7 +9,7 @@ __license__     = "Apache License 2.0"
 import threading
 import random
 
-from ...util import thread
+from mrbaviirc.util import thread
 
 
 # threadattr

@@ -5,7 +5,7 @@ __copyright__   = "Copyright 2018"
 __license__     = "Apache License 2.0"
 
 
-from ... import util
+from mrbaviirc import util
 
 
 def test_updatedoc():

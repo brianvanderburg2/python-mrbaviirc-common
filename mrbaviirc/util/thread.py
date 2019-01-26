@@ -10,7 +10,7 @@ __license__     =   "Apache License 2.0"
 import threading
 import weakref
 
-from ..constants import SENTINEL
+from .constants import SENTINEL
 from .imp import Exporter
 
 

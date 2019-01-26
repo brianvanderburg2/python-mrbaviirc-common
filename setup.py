@@ -3,11 +3,11 @@
 from setuptools import setup, find_packages
 
 metadata = {}
-with open("mrbaviirc/_version.py") as handle:
+with open("mrbaviirc/util/_version.py") as handle:
     exec(handle.read(), metadata)
 
 setup(
-    name="mrbaviirc",
+    name="mrbaviirc.util",
     version=metadata["__version__"],
     description=metadata["__doc__"].strip(),
     author=metadata["__author__"],
