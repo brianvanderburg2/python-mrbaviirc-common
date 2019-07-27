@@ -49,21 +49,18 @@ class BaseAppHelper(ConfigMixin, ServiceContainerMixin):
             Initialize.  Note the construction shouldn't perform any active
             operations, it's really just a place to specify configurations.
         """
-
         ConfigMixin.__init__(self)
         ServiceContainerMixin.__init__(self)
 
         self.set(self) # Set as the global instance
 
+        # Create basic components
         self._lock = threading.RLock()
         self._local = threading.local()
         self._main_thread = threading.current_thread()
         self._storage = {}
 
-        self.setup()
-
-    def setup(self):
-        """ Setup configs and registry here. """
+        # Setup config/registry
         self.set_config("appname", lambda: self.appname)
         self.set_config("appversion", lambda: self.appversion)
 
