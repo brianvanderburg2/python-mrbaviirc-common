@@ -26,8 +26,11 @@ class SharedLogFile:
 
     def flush(self, block=True):
         """ Flush the contents. """
-
         with self._lock:
+            if self._filename is None:
+                self._entries = []
+                return True
+
             handle = io.open(self._filename, "at", encoding="utf-8", newline=None)
             with handle:
                 cmd = fcntl.LOCK_EX

@@ -30,7 +30,7 @@ class ConfigMixin(object):
         """ Get the value of a config. """
         if config in self._configs:
             return self.eval_config(self._configs[config])
-        elif defval is not _SENTNEL:
+        elif defval is not SENTINEL:
             return self.eval_config(defval)
         else:
             raise KeyError("No such config: {0}".format(config))
