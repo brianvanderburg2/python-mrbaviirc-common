@@ -14,7 +14,6 @@ import weakref
 
 class HookEntry:
     """ Represent a registered hook entry. """
-
     def __init__(self, hooks, hook, callback):
         self._hooks = weakref.ref(hooks)
         self._hook = hook
@@ -22,21 +21,21 @@ class HookEntry:
         try:
             obj = callback.__self__
             func = callback.__func__
-
-            self._weak = True
-            self._obj = weakref.ref(obj, self._cleanup)
-            self._func = weakref.ref(func, self._cleanup)
-            self._type = type(callback)
         except AttributeError:
             self._weak = False
             self._obj = None
             self._func = callback
             self._type = None
+        else:
+            self._weak = True
+            self._obj = weakref.ref(obj, self._cleanup)
+            self._func = weakref.ref(func, self._cleanup)
+            self._type = type(callback)
 
-        self._suspended = False
+        self._enabled = True
 
     def __call__(self, *args, **kwargs):
-        if not self._suspended:
+        if self._enabled:
             # call strong reference callbacks directly
             if not self._weak:
                 return (True, self._func(*args, **kwargs))
@@ -50,13 +49,14 @@ class HookEntry:
 
         return (False, None)
 
-    def suspend(self):
-        """ Suspend this hook callback from being called. """
-        self._suspended = True
+    @property
+    def enabled(self):
+        """ enable or disable the hook """
+        return self._enabled
 
-    def resume(self):
-        """ Restore this hook callback to being called. """
-        self._suspended = False
+    @enabled.setter
+    def enabled(self, value):
+        self._enabled = bool(value)
 
     def unregister(self):
         """ Unregister this hook. """
@@ -67,6 +67,7 @@ class HookEntry:
     def _cleanup(self, ref): # pylint: disable=unused-argument
         """ Unregister the hook when ref is zero. """
         self.unregister()
+
 
 class Hooks:
     """ This class provides methods to register and fire hook callbacks.
@@ -83,10 +84,10 @@ class Hooks:
         self._lock = threading.RLock()
         self._hooks = {}
         self._queue = []
-        self._called = []
+        self._emitted = []
         self._processing = False
 
-    def register(self, hook: str, callback: Callable[...,Any]) -> HookEntry:
+    def register(self, hook: str, callback: Callable[..., Any]) -> HookEntry:
         """ Add a event callback for a given hook.
 
         Parameters
@@ -131,11 +132,12 @@ class Hooks:
                 except ValueError:
                     pass
 
-    def call(self, hook: str, *args, **kwargs):
+    def emit(self, hook: str, *args, **kwargs):
         """ Call all registered callbacks for a given hook.
 
         Hook callbacks may also call more hooks, but if they do, those are not
-        called until the current hook finishes.
+        called until the current hook finishes when using emit.  To directly
+        call the hooks immediately, use call instead.
 
         Parameters
         ----------
@@ -148,18 +150,98 @@ class Hooks:
         """
 
         with self._lock:
-            self._called.append((hook, args, kwargs))
-            if not self._processing:
-                try:
-                    self._processing = True
-                    while self._called:
-                        (hook, args, kwargs) = self._called.pop(0)
-                        queue = self._hooks.get(hook, None)
-                        if queue is not None:
-                            for entry in queue:
-                                entry(*args, **kwargs)
-                finally:
-                    self._processing = False
+            original_processing = self._processing
+            try:
+                self._processing = True
+                self._emitted.append((hook, args, kwargs))
+                if not original_processing:
+                    self._process_emitted()
+            except:
+                if not original_processing:
+                    self._emitted = []
+                raise
+            finally:
+                self._processing = original_processing
+
+    def call(self, hook: str, *args, **kwargs):
+        """ Call all registered callbacks for a given hook.
+
+        Unlike emit which will append a call to be handled in the order added,
+        this will immediately call the callbacks for a hook.
+
+        Parameters
+        ----------
+        hook : str
+            The name of the hook to call
+        *args
+            Positional parameters to pass to the callbacks
+        **kwargs
+            Keyword parameters to pass to the callbacks
+        """
+
+        with self._lock:
+            original_processing = self._processing
+            try:
+                self._processing = True
+                queue = self._hooks.get(hook, [])
+                for entry in queue:
+                    entry(*args, **kwargs)
+
+                if not original_processing:
+                    self._process_emitted()
+            except:
+                if not original_processing:
+                    self._emitted = []
+                raise
+            finally:
+                self._processing = original_processing
+
+    def accumulate(self, hook: str, callback: Callable[[Any], None], *args, **kwargs):
+        """ Call all registered callbacks for a given hook and tally results.
+
+        Parameters
+        ----------
+        hook : str
+            The name of the hook to call
+        callback : Callable[[Any], None]
+            A callback which will be called with the reslts of the hook call
+            for each callback called.
+        *args
+            Positional parameters to pass to the callbacks
+        **kwargs
+            Keyword parameters to pass to the callbacks
+        """
+
+        with self._lock:
+            original_processing = self._processing
+            try:
+                self._processing = True
+                queue = self._hooks.get(hook, [])
+                for entry in queue:
+                    (called, result) = entry(*args, **kwargs)
+                    if called:
+                        callback(result)
+
+                if not original_processing:
+                    self._process_emitted()
+            except:
+                if not original_processing:
+                    self._emitted = []
+                raise
+            finally:
+                self._processing = original_processing
+
+    def _process_emitted(self):
+        """ Process any emitted hooks.
+
+        This function does not change any locks, should be called within an
+        existing lock.
+        """
+        while self._emitted:
+            (hook, args, kwargs) = self._emitted.pop(0)
+            queue = self._hooks.get(hook, [])
+            for entry in queue:
+                entry(*args, **kwargs)
 
     def queue(self, hook, *args, **kwargs):
         """ Queue a hook call for later calling.
@@ -180,5 +262,6 @@ class Hooks:
         """ Call all previously queued hook calls. """
         with self._lock:
             # lock is a reentreant lock so this is fine
-            (hook, args, kwargs) = self._queue.pop(0)
-            self.call(hook, *args, **kwargs)
+            while self._queue:
+                (hook, args, kwargs) = self._queue.pop(0)
+                self.call(hook, *args, **kwargs)
