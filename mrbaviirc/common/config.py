@@ -50,6 +50,27 @@ class Config:
         section_container = self._sections.setdefault(section, {})
         section_container[name] = value
 
+    def update(
+            self,
+            config: Dict[str, Any],
+            section: str = "config"
+    ):
+        """ Update a configuratoin section.
+
+        This will merge all values from the dictionary specified in `config`
+        into the configuration section.
+
+        Parameters
+        ----------
+        config : Dict[str, Any]
+            A mapping of key name to configuration values to merge into the
+            configuration.
+        section : str, default="config"
+            The section of the configuration to merge into
+        """
+        section_container = self._sections.setdefault(section, {})
+        section_container.update(config)
+
     def get(
             self,
             name: str,
