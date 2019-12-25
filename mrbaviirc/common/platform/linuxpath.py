@@ -1,91 +1,74 @@
 """ Linux-style paths. """
 
-from __future__ import absolute_import
+__author__ = "Brian Allen Vanderburg II"
+__copyright__ = "Copyright (C) 2018-2019 Brian Allen Vanderburg II"
+__license__ = "Apache License 2.0"
 
-__author__      =   "Brian Allen Vanderburg II"
-__copyright__   =   "Copyright (C) 2018 Brian Allen Vanderburg II"
-__license__     =   "Apache License 2.0"
-
-__all__ = []
+__all__ = [
+    "get_user_data_dir", "get_sys_data_dirs", "get_user_config_dir",
+    "get_sys_config_dirs", "get_cache_dir", "get_runtime_dir"
+]
 
 
 import os
+import tempfile
+
+# bring in common paths
+from .commonpath import * # pylint: disable=wildcard-import
+from . import commonpath as _common
+__all__.extend(_common.__all__)
+del _common
 
 
-from .commonpath import CommonPaths
-from ..util.imp import Exporter
+def _normalize(base, vendor, name, version):
+    """ Combine a base path bith the app name/vendor/version information. """
+    parts = []
+    if vendor is not None:
+        parts.append(vendor)
+    if name is not None:
+        parts.append(name)
+    if version is not None:
+        parts.append(version)
 
+    return os.path.join(base, *parts)
 
-export = Exporter(globals())
+def get_user_data_dir(name=None, version=None, vendor=None):
+    """ Return the directory to read/write user data files. """
+    base = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+    return _normalize(base, vendor, name, version)
 
+def get_sys_data_dirs(name=None, version=None, vendor=None):
+    """ Return the base system data directories for reading only. """
+    bases = os.environ.get(
+        "XDG_DATA_DIRS",
+        os.pathsep.join(["/usr/local/share", "/usr/share"]),
+    ).split(os.pathsep)
+    return [_normalize(base, vendor, name, version) for base in bases]
 
-@export
-class LinuxPaths(CommonPaths):
+def get_user_config_dir(name=None, version=None, vendor=None):
+    """ Return the base directory to read/write user configuration files. """
+    base = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    return _normalize(base, vendor, name, version)
 
-    @staticmethod
-    def get_user_data_dir(appname, version=None):
-        """ Return the directory to read/write user data files. """
-        datadir = os.path.join(
-            os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
-            appname
-        )
+def get_sys_config_dirs(name=None, version=None, vendor=None):
+    """ Return the base system configuration directories. """
+    # Should we add "/etc" to the end of this list
+    bases = os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(os.pathsep)
+    return [_normalize(base, vendor, name, version) for base in bases]
 
-        return os.path.join(datadir, version) if version else datadir
+def get_cache_dir(name=None, version=None, vendor=None):
+    """ Return a base cache directory. """
+    base = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+    return _normalize(base, vendor, name, version)
 
-    @staticmethod
-    def get_sys_data_dir(appname, version=None, all=True):
-        """ Return the system data directories. """
-        datadirs = os.environ.get(
-            "XDG_DATA_DIRS", 
-            os.pathsep.join(["/usr/local/share", "/usr/share"]),
-        ).split(os.pathsep)
+def get_runtime_dir(name=None, version=None, vendor=None):
+    """ Return base directory for runtime files. """
+    runtimedir = os.environ.get("XDG_RUNTIME_DIR")
 
-        suffix = os.path.join(appname, version) if version else appname
-        datadirs = tuple(os.path.join(part, suffix) for part in datadirs)
+    if os.path.isdir(runtimedir):
+        return _normalize(runtimedir, vendor, name, version)
 
-        return datadirs if all else datadirs[0]
-
-    @staticmethod
-    def get_user_config_dir(appname, version=None):
-        """ Return the directory to read/write user configuration files. """
-        confdir = os.path.join(
-            os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
-            appname
-        )
-
-        return os.path.join(confdir, version) if version else confdir
-
-    @staticmethod
-    def get_sys_config_dir(appname, version=None, all=True):
-        """ Return the system configuration directories. """
-        confdirs = os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(os.pathsep)
-
-        suffix = os.path.join(appname, version) if version else appname
-        confdirs = tuple(os.path.join(part.rstrip(os.sep), suffix) for part in confdirs)
-
-        return confdirs if all else confdirs[0]
-
-    @staticmethod
-    def get_cache_dir(appname, version=None):
-        """ Return a cache directory. """
-
-        cachedir = os.path.join(
-            os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
-            appname
-        )
-
-        return os.path.join(cachedir, version) if version else cachedir
-
-    @staticmethod
-    def get_runtime_dir(appname, version=None):
-        """ Return directory for runtime files. """
-        runtimedir = os.environ.get("XDG_RUNTIME_DIR")
-
-        if os.path.isdir(runtimedir):
-            suffix = os.path.join(appname, version) if version else appname
-            return os.path.join(runtimedir, suffix)
-        else:
-            import tempfile
-            # TODO: log warning
-            return tempfile.mkdtemp(appname)
-        
+    # log warning once logging module is done
+    # perhaps should return None if no runtime dir and let application
+    # handle it, or add an atexit handler to cleanup the function when done
+    return tempfile.mkdtemp()
