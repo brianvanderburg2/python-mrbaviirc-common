@@ -1,28 +1,32 @@
 """ Import utility functions. """
 
-__author__      =   "Brian Allen Vanderburg II"
-__copyright__   =   "Copyright (C) 2018 Brian Allen Vanderburg II"
-__license__     =   "Apache License 2.0"
+__author__ = "Brian Allen Vanderburg II"
+__copyright__ = "Copyright (C) 2018-2019 Brian Allen Vanderburg II"
+__license__ = "Apache License 2.0"
 
-
-import sys
 import pkgutil
 import importlib
 
 
 class ExportError(Exception):
     """ An exception caused when using export. """
-    pass
 
 
-class Exporter(object):
+class Exporter:
     """ A helper class for exporting names from a module. """
 
-    def __init__(self, _globals):
-        """ Initialize the exporter. """
-        self._all = _globals.setdefault("__all__", [])
-        self._globals = _globals
-        self._package = _globals["__package__"]
+    def __init__(self, the_globals):
+        """ Initialize the exporter.
+
+        Parameters
+        ----------
+        the_globals
+            This should be the result of the call to `globals()` from the
+            module the exporter is used in.
+        """
+        self._all = the_globals.setdefault("__all__", [])
+        self._globals = the_globals
+        self._package = the_globals["__package__"]
 
 
     def __call__(self, _obj=None, **kwargs):
@@ -60,14 +64,16 @@ class Exporter(object):
 
             for impname in impnames:
                 if impname in self._all:
-                    raise ExportError("name imported from {} already exists in __all__: {}".format(mname, impname))
+                    raise ExportError("name imported from {} already exists in __all__: {}".format(
+                        mname, impname
+                    ))
                 self._all.append(impname)
                 self._globals[impname] = mdict[impname]
 
 
 # Use our exporter from here out.  Call it _export to prevent accidental
 # from imp import export
-_export = Exporter(globals())
+_export = Exporter(globals()) # pylint: disable=invalid-name
 _export(Exporter)
 _export(ExportError)
 
@@ -94,18 +100,16 @@ def import_submodules(package, recursive=False, absolute=False):
         for (loader, name, ispkg) in func(package.__path__, prefix)
     )
 
-    return loaded
-
 
 @_export
 def import_submodules_symbols(package_name, symbol, recursive=False):
     """ Return a list of the specified symbols from all loaded modules. """
     submodules = import_submodules(package_name, recursive)
-    
+
     results = []
-    for (name, module) in submodules:
+    for (_, module) in submodules:
         value = getattr(module, symbol, None)
-        if(value):
+        if value:
             results.append(value)
 
     return results
@@ -122,7 +126,7 @@ def import_submodules_symbolref(package_name, symbol, recursive=False):
 
     submodules = import_submodules(package_name, recursive)
     results = []
-    for (name, module) in submodules:
+    for (_, module) in submodules:
         value = getattr(module, symbol, None)
         if value is None:
             continue
@@ -137,5 +141,4 @@ def import_submodules_symbolref(package_name, symbol, recursive=False):
             if item is not None:
                 results.append(item)
 
-    return results            
-
+    return results
