@@ -115,7 +115,8 @@ class AppPaths(AppPathsBase):
             self,
             appname: str,
             version: Optional[str] = None,
-            vendor: Optional[str] = None
+            vendor: Optional[str] = None,
+            prefix: Optional[str] = None
     ):
         """ Initialize the paths object.
 
@@ -127,12 +128,16 @@ class AppPaths(AppPathsBase):
             The application version information as would be used for a path
         vendor : Optional[str]
             The application vendor as would be used for a path.
+        prefix : Optional[str]
+            The install prefix.  This may not be used on some platforms or
+            for some paths/.
 
         """
         AppPathsBase.__init__(self)
         self._appname = appname
         self._version = version
         self._vendor = vendor
+        self._prefix = prefix
         self._paths = platform.path
 
     @property
@@ -144,7 +149,7 @@ class AppPaths(AppPathsBase):
     @property
     def sys_data_dirs(self):
         return self._paths.get_sys_data_dirs(
-            self._appname, self._version, self._vendor
+            self._appname, self._version, self._vendor, self._prefix
         )
 
     @property
