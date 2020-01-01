@@ -80,7 +80,7 @@ class Hooks:
     """
 
     def __init__(self):
-        """ Create the events data. """
+        """ Create the hooks data. """
         self._lock = threading.RLock()
         self._hooks = {}
         self._queue = []
@@ -265,3 +265,39 @@ class Hooks:
             while self._queue:
                 (hook, args, kwargs) = self._queue.pop(0)
                 self.call(hook, *args, **kwargs)
+
+
+class Signal(Hooks):
+    """ This class represents a single hook to be used as a signal object.
+
+    This class provides all the same functions as the Hooks class, but does
+    not support named hook registrations.  In this way, it is useful as a
+    simple signal mechanism.  See the parent class for more detailed
+    documentation.  The only difference is the varoius methods do not take
+    a named hook, but instead just a single name internally
+    """
+
+    def register(self, callback: Callable[..., Any]) -> HookEntry:
+        # pylint: disable=arguments-differ
+        """ See parent class """
+        return Hooks.register(self, "hook", callback)
+
+    def emit(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
+        """ See parent class """
+        return Hooks.emit(self, "hook", *args, **kwargs)
+
+    def call(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
+        """ See parent class """
+        return Hooks.call(self, "hook", *args, **kwargs)
+
+    def accumulate(self, callback: Callable[[Any], None], *args, **kwargs):
+        # pylint: disable=arguments-differ
+        """ See parent class. """
+        return Hooks.accumulate(self, "hook", callback, *args, **kwargs)
+
+    def queue(self, *args, **kwargs):
+        # pylint: disable=arguments-differ
+        """ See parent class. """
+        return Hooks.queue("hook", *args, **kwargs)
