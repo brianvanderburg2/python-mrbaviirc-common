@@ -24,12 +24,6 @@ class CodeBuilder:
     variables should start differently.
     """
 
-    # The _lines variable format is as follows:
-    # If a string, then the result is the indent with the line
-    # If an integer, then the value increases or decreases the current indent
-    # If another codebuilder section, then it's flatten method is called with
-    # the current indent level
-
     def __init__(self, _var_prefix=""):
         """ Initialize the code builder. """
 

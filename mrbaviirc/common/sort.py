@@ -17,7 +17,7 @@ def depends_sort(data: Dict[str, Sequence[str]]) -> Sequence[str]:
     Parameters
     ----------
     data : Dict[str, Sequence[str]]
-        Adictionary of name : [depends names] mappings.
+        A dictionary of name : [depends names] mappings.
 
     Returns
     -------
