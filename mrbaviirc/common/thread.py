@@ -1,24 +1,19 @@
 """ Threading utilities. """
 
-from __future__ import absolute_import
+__author__ = "Brian Allen Vanderburg II"
+__copyright__ = "Copyright (C) 2018 Brian Allen Vanderburg II"
+__license__ = "Apache License 2.0"
 
-__author__      =   "Brian Allen Vanderburg II"
-__copyright__   =   "Copyright (C) 2018 Brian Allen Vanderburg II"
-__license__     =   "Apache License 2.0"
+__all__ = ["threadattr"]
 
 
 import threading
 import weakref
 
-from ..constants import SENTINEL
-from .imp import Exporter
+from .constants import SENTINEL
 
 
-export = Exporter(globals())
-
-
-@export
-class threadattr(object):
+class threadattr: # pylint: disable=invalid-name
     """ Class for thread-local class members. """
 
     def __init__(self, defval=SENTINEL):
@@ -27,27 +22,26 @@ class threadattr(object):
         self._defval = defval
 
     def __get__(self, instance, owner):
-        assert(instance is not None)
+        assert instance is not None
         try:
             return self._vars.data[instance]
         except (KeyError, AttributeError):
             if self._defval is not SENTINEL:
                 return self._defval
-            else:
-                raise AttributeError("Thread-local attribute value not yet set.")
+
+            raise AttributeError("Thread-local attribute value not yet set.")
 
     def __set__(self, instance, value):
-        assert(instance is not None)
+        assert instance is not None
         try:
-            v = self._vars.data
+            tlvars = self._vars.data
         except AttributeError:
-            v = self._vars.data = weakref.WeakKeyDictionary()
+            tlvars = self._vars.data = weakref.WeakKeyDictionary()
 
-        v[instance] = value
+        tlvars[instance] = value
 
     def __delete__(self, instance):
         try:
             self._vars.data.pop(instance, None)
         except AttributeError:
             pass
-
