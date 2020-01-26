@@ -7,27 +7,27 @@ __license__ = "Apache License 2.0"
 __all__ = ["Config"]
 
 
+import threading
 from typing import Any, Union, Sequence, Dict
+
+from .constants import SENTINEL
 
 
 class Config:
     """ A container for configuration information.
 
     This class is used by the app module as its configuration container.
-    It may also be used as a standalone class. This class is not thread
-    safe, meaning that any configuration values set into the container
-    should be done once at startup. Getting values from the container
-    is thread safe.
-
-    While the configuration container does not attempt to limit the types of
-    values stored or retrieved, it should be limited to simple data such
-    as strings, integers, floats, lists, tuples, dicts.  When getting a value,
-    these types are parsed recursively and any callable will be substituted
-    with the return value of the call.
+    It may also be used as a standalone class.  While the configuration
+    container does not attempt to limit the types of values stored or retrieved,
+    it should be limited to simple data such as strings, integers, floats,
+    lists, tuples, dicts.  When getting a value, these types are parsed
+    recursively and any callable will be substituted with the return value of
+    the call.
     """
 
     def __init__(self):
         """ Initialize the configuration. """
+        self._lock = threading.RLock()
         self._sections = {}
 
     def set(
@@ -47,8 +47,9 @@ class Config:
         section : str, default="config"
             The section name to store the configuration value in.
         """
-        section_container = self._sections.setdefault(section, {})
-        section_container[name] = value
+        with self._lock:
+            section_container = self._sections.setdefault(section, {})
+            section_container[name] = value
 
     def update(
             self,
@@ -68,8 +69,9 @@ class Config:
         section : str, default="config"
             The section of the configuration to merge into
         """
-        section_container = self._sections.setdefault(section, {})
-        section_container.update(config)
+        with self._lock:
+            section_container = self._sections.setdefault(section, {})
+            section_container.update(config)
 
     def get(
             self,
@@ -96,15 +98,16 @@ class Config:
             returned.
         """
 
-        section_container = self._sections.get(section)
-        if section_container is None:
-            return default
+        with self._lock:
+            section_container = self._sections.get(section)
+            if section_container is None:
+                return default
 
-        value = section_container.get(name)
-        if value is None:
-            return default
+            value = section_container.get(name, SENTINEL)
+            if value is SENTINEL:
+                return default
 
-        return self._eval(value)
+            return self._eval(value)
 
     def extract(
             self,
@@ -142,18 +145,19 @@ class Config:
         if not isinstance(sections, (tuple, list)):
             sections = [sections]
 
-        for section in sections:
-            section_container = self._sections.get(section)
-            if section_container is None:
-                continue
+        with self._lock:
+            for section in sections:
+                section_container = self._sections.get(section)
+                if section_container is None:
+                    continue
 
-            section_results = {
-                i[prefix_len:] : self._eval(section_container[i])
-                for i in section_container
-                if i.startswith(prefix)
-            }
+                section_results = {
+                    i[prefix_len:] : self._eval(section_container[i])
+                    for i in section_container
+                    if i.startswith(prefix)
+                }
 
-            results.update(section_results)
+                results.update(section_results)
 
         return results
 
