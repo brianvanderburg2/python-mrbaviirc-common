@@ -9,7 +9,7 @@ __license__     = "Apache License 2.0"
 
 import pytest
 
-from mrbaviirc.common.util import imp
+from mrbaviirc.common import imp
 
 # Exporter
 def test_exporter_symbol():
@@ -35,9 +35,9 @@ def test_exporter_symbol():
 
 def test_exporter_extend():
     import os
-    from mrbaviirc.common.util import functools
+    from mrbaviirc.common import functools
     
-    glbls = {"__package__": "mrbaviirc.common.util"}
+    glbls = {"__package__": "mrbaviirc.common"}
     export = imp.Exporter(glbls)
 
     export.extend(os)
@@ -45,19 +45,19 @@ def test_exporter_extend():
     assert(glbls["path"] == os.path)
 
 
-    glbls = {"__package__": "mrbaviirc.common.util"}
+    glbls = {"__package__": "mrbaviirc.common"}
     export = imp.Exporter(glbls)
 
     export.extend("os")
     assert(glbls["__all__"] == os.__all__)
     assert(glbls["path"] == os.path)
 
-    glbls = {"__package__": "mrbaviirc.common.util"}
+    glbls = {"__package__": "mrbaviirc.common"}
     export = imp.Exporter(glbls)
 
     export.extend(".functools")
     assert(glbls["__all__"] == functools.__all__)
-    assert(glbls["lazyprop"] == functools.lazyprop)
+    assert(glbls["lazy_property"] == functools.lazy_property)
 
 
 
